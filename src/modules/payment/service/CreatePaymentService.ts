@@ -86,9 +86,10 @@ export class CreatePaymentService {
     );
 
     return {
+      ...payment,
+      status: paymentIntent.paymentIntent.status,
       clientSecret: paymentIntent.paymentIntent.client_secret,
       amount: valueInCents,
-      ...payment,
     };
   }
 }
