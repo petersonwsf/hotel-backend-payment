@@ -18,8 +18,8 @@ export class PaymentService {
     private readonly capturePaymentService: AmountCaptureService,
   ) {}
 
-  async create(data: CreatePaymentIntent) {
-    return await this.createService.execute(data);
+  async create(data: CreatePaymentIntent, token: string) {
+    return await this.createService.execute(data, token);
   }
 
   async findById(id: string) {
@@ -34,7 +34,7 @@ export class PaymentService {
     return await this.refundPaymentService.execute(data);
   }
 
-  async capture(data: PaymentCaptureDTO) {
-    return await this.capturePaymentService.execute(data);
+  async capture(data: PaymentCaptureDTO, token: string) {
+    return await this.capturePaymentService.execute(data, token);
   }
 }

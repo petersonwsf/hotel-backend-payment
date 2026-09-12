@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { ClientDataDTO } from '../../dtos/ClientDataDTO';
 
 export interface PaymentResult {
   paymentIntent: Stripe.PaymentIntent;
@@ -7,5 +8,5 @@ export interface PaymentResult {
 }
 
 export interface IPayementStrategy {
-  createPayment(data: any): Promise<PaymentResult>;
+  createPayment(data: any, client: ClientDataDTO): Promise<PaymentResult>;
 }

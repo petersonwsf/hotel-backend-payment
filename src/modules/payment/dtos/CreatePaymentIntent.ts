@@ -7,5 +7,4 @@ export interface CreatePaymentIntent {
   amount: number;
   method: Method;
   currency?: Currency;
-  customerEmail?: string;
 }

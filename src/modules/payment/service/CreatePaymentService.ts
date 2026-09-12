@@ -16,6 +16,8 @@ import { BoletoPayment } from '../strategies/BoletoPayment';
 import { CreatePaymentIntent } from '../dtos/CreatePaymentIntent';
 import { Logger } from '@nestjs/common';
 import { PaymentDetails } from '../dtos/PaymentDetails';
+import { getClientData } from 'src/common/http/aplicationHotel.client';
+import { ClientDataDTO } from '../dtos/ClientDataDTO';
 
 const schemaValidation = z.object({
   reservationId: z.number(),
@@ -23,7 +25,6 @@ const schemaValidation = z.object({
   userId: z.number().int(),
   method: z.enum(Method),
   currency: z.string().optional(),
-  customerEmail: z.string().optional(),
 });
 
 @Injectable()
@@ -37,7 +38,10 @@ export class CreatePaymentService {
 
   private readonly logger = new Logger(CreatePaymentService.name);
 
-  async execute(data: CreatePaymentIntent) : Promise<PaymentDetails> {
+  async execute(
+    data: CreatePaymentIntent,
+    token: string,
+  ): Promise<PaymentDetails> {
     const dataValid = schemaValidation.parse(data);
 
     if (dataValid.amount <= 0) throw new AmountZero();
@@ -54,8 +58,12 @@ export class CreatePaymentService {
         ? CaptureMethod.MANUAL
         : CaptureMethod.AUTOMATIC;
 
-    const paymentIntent: PaymentResult =
-      await paymentMethod.createPayment(dataValid);
+    const client: ClientDataDTO = await getClientData(dataValid.userId, token);
+
+    const paymentIntent: PaymentResult = await paymentMethod.createPayment(
+      dataValid,
+      client,
+    );
     this.logger.log(
       `Payment Intent created successfully with ID ${paymentIntent.paymentIntent.id} for reservation ID ${dataValid.reservationId} and amount ${dataValid.amount} cents`,
     );

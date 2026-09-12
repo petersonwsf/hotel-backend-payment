@@ -21,6 +21,8 @@ import { ValueAbovePermitted } from '../domain/errors/ValueAbovePermitted';
 import { StripeError } from '../domain/errors/StripeError';
 import { PaymentNotBelongUser } from '../domain/errors/PaymentNotBelongUser';
 import { Logger } from '@nestjs/common';
+import { ClientDataDTO } from '../dtos/ClientDataDTO';
+import { getClientData } from 'src/common/http/aplicationHotel.client';
 
 const validationSchema = zod.object({
   id: zod.coerce.number().int(),
@@ -51,7 +53,7 @@ export class AmountCaptureService {
   ) {}
   private readonly logger = new Logger(AmountCaptureService.name);
 
-  async execute(data: PaymentCaptureDTO) {
+  async execute(data: PaymentCaptureDTO, token: string) {
     const dataValid = validationSchema.parse(data);
 
     const valueInCents = Math.round(dataValid.amount * 100);
@@ -112,12 +114,15 @@ export class AmountCaptureService {
           ? CaptureMethod.MANUAL
           : CaptureMethod.AUTOMATIC;
 
+      const client: ClientDataDTO = await getClientData(payment.userId, token);
+
       const stripeNewPayment: PaymentResult = await paymentMethod.createPayment(
         {
           amount: remainder,
           currency: payment.currency,
           reservationId: payment.reservationId,
         },
+        client,
       );
 
       this.logger.log(
