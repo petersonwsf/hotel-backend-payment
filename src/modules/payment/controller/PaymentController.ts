@@ -5,6 +5,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Headers,
   HttpCode,
   NotFoundException,
   Param,
@@ -38,9 +39,12 @@ export class PaymentController {
 
   @Post()
   @HttpCode(201)
-  async createPaymentIntent(@Body() data: CreatePaymentIntent) {
+  async createPaymentIntent(
+    @Body() data: CreatePaymentIntent,
+    @Headers('authorization') token: string,
+  ) {
     try {
-      const payment = await this.service.create(data);
+      const payment = await this.service.create(data, token);
       return { payment };
     } catch (error) {
       if (error instanceof zod.ZodError)
@@ -102,10 +106,14 @@ export class PaymentController {
 
   @Post('/capture')
   @HttpCode(200)
-  async capturePayment(@Body() data: PaymentCaptureDTO, @Req() req: Request) {
+  async capturePayment(
+    @Body() data: PaymentCaptureDTO,
+    @Req() req: Request,
+    @Headers('authorization') token: string,
+  ) {
     try {
       const user = req.user as { id: number; username: string; role: string };
-      const capture = await this.service.capture({ ...data, user });
+      const capture = await this.service.capture({ ...data, user }, token);
       return { capture };
     } catch (error) {
       if (error instanceof zod.ZodError)

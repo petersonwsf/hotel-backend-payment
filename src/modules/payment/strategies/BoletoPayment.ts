@@ -5,12 +5,16 @@ import {
 } from './interfaces/IPaymentStrategy';
 import { Inject, Injectable } from '@nestjs/common';
 import { STRIPE_CLIENT } from 'src/common/stripe/stripe.constants';
+import { ClientDataDTO } from '../dtos/ClientDataDTO';
 
 @Injectable()
 export class BoletoPayment implements IPayementStrategy {
   constructor(@Inject(STRIPE_CLIENT) private readonly stripe: Stripe) {}
 
-  async createPayment(data: any): Promise<PaymentResult> {
+  async createPayment(
+    data: any,
+    client: ClientDataDTO,
+  ): Promise<PaymentResult> {
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: data.amount,
       currency: data.currency ?? 'brl',
@@ -19,16 +23,16 @@ export class BoletoPayment implements IPayementStrategy {
       payment_method_data: {
         type: 'boleto',
         boleto: {
-          tax_id: '12236893442',
+          tax_id: client.pin,
         },
         billing_details: {
-          name: data.customerName ?? 'Cliente Importado',
-          email: data.customerEmail,
+          name: client.name,
+          email: client.email,
           address: {
-            line1: 'Rua da Aurora, 1000',
-            city: 'Rio tinto',
-            state: 'PE',
-            postal_code: '58297000',
+            line1: `${client.contactInformation.street}, ${client.contactInformation.number ?? 'S/N'}`,
+            city: client.contactInformation.city,
+            state: client.contactInformation.state,
+            postal_code: client.contactInformation.postalCode,
             country: 'BR',
           }
         },
@@ -40,6 +44,7 @@ export class BoletoPayment implements IPayementStrategy {
       },
       metadata: {
         reservationId: String(data.reservationId),
+        client: JSON.stringify(client),
       },
     });
 
