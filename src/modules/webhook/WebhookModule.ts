@@ -31,7 +31,8 @@ import { ProccessWebhookSchedule } from './service/ProccessWebhookSchedule';
         transport: Transport.RMQ,
         options: {
           urls: [env.RABBITMQ_URL ?? ''],
-          queue: 'payment_queue',
+          exchangeType: 'topic',
+          exchange: 'payment_exchange',
           queueOptions: {
             durable: true,
           },
