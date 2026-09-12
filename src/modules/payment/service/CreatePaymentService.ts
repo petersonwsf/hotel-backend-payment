@@ -37,7 +37,7 @@ export class CreatePaymentService {
 
   private readonly logger = new Logger(CreatePaymentService.name);
 
-  async execute(data: CreatePaymentIntent) : Promise<PaymentDetails> {
+  async execute(data: CreatePaymentIntent): Promise<PaymentDetails> {
     const dataValid = schemaValidation.parse(data);
 
     if (dataValid.amount <= 0) throw new AmountZero();
@@ -78,9 +78,10 @@ export class CreatePaymentService {
     );
 
     return {
+      ...payment,
+      status: paymentIntent.paymentIntent.status,
       clientSecret: paymentIntent.paymentIntent.client_secret,
       amount: valueInCents,
-      ...payment,
     };
   }
 }
