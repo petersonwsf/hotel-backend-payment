@@ -26,6 +26,25 @@ export class WebhookRepository implements IWebhookRepository {
     });
   }
 
+  async resetForRetry(id: number, payload: Prisma.InputJsonValue) {
+    return await prisma.stripeWebhookEvent.update({
+      where: { id },
+      data: {
+        payload,
+        status: 'RECEIVED',
+        processedAt: null,
+        errorMessage: null,
+      },
+    });
+  }
+
+  async update(id: number, data: Prisma.StripeWebhookEventUpdateInput) {
+    return await prisma.stripeWebhookEvent.update({
+      where: { id },
+      data,
+    });
+  }
+
   async processWebhook(
     id: number,
     status: WebhookProcessStatus,
