@@ -11,6 +11,7 @@ import { STRIPE_CLIENT } from 'src/common/stripe/stripe.constants';
 import Stripe from 'stripe';
 import { RabbitMQConnectionProvider } from 'src/common/rabbitmq/rabbitmq.provider';
 import { RabbitMQChannelProvider } from 'src/common/rabbitmq/rabbitmq-channel.provider';
+import { PaymentSSEService } from './service/PaymentSSEService';
 
 @Module({
   controllers: [WebhookController],
@@ -22,6 +23,7 @@ import { RabbitMQChannelProvider } from 'src/common/rabbitmq/rabbitmq-channel.pr
     ProccessWebhookSchedule,
     RabbitMQConnectionProvider,
     RabbitMQChannelProvider,
+    PaymentSSEService,
     {
       provide: STRIPE_CLIENT,
       useFactory: () =>

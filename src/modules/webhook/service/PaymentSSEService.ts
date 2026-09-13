@@ -1,6 +1,6 @@
-import { map, filter, Subject } from 'rxjs';
+import { map, filter, Subject, Observable } from 'rxjs';
 import { PaymentEventSSE } from '../dto/PaymentEventSSE';
-import { Injectable } from 'node_modules/@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PaymentSSEService {
@@ -10,19 +10,25 @@ export class PaymentSSEService {
     this.paymentsEvents$.next(event);
   }
 
-  getPaymentsStreamForUser(reservationId: number, userId: number) {
+  getPaymentsStreamForUser(
+    reservationId: number,
+    userId: number,
+  ): Observable<MessageEvent> {
     return this.paymentsEvents$.pipe(
       filter(
         (event) =>
-          event.reservationId === reservationId && event.user.id === userId
+          event.reservationId === reservationId && event.userId === userId,
       ),
-      map((event) => ({
-        data: JSON.stringify({
-          user: event.user,
-          reservationId: event.reservationId,
-          payment: event.payment,
-        }),
-      })),
+      map(
+        (event) =>
+          ({
+            data: JSON.stringify({
+              userId: event.userId,
+              reservationId: event.reservationId,
+              payment: event.payment,
+            }),
+          }) as MessageEvent,
+      ),
     );
   }
 }

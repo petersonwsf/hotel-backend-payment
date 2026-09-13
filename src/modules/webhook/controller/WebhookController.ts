@@ -5,23 +5,26 @@ import {
   Inject,
   Post,
   Req,
+  Sse,
+  UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import type { RawBodyRequest } from '@nestjs/common';
 import { STRIPE_CLIENT } from 'src/common/stripe/stripe.constants';
 import Stripe from 'stripe';
 import { env } from 'process';
 import { ProcessWebhookService } from '../service/ProcessWebhookService';
-import { RABBITMQ_SERVICE } from 'src/common/rabbitmq/rabbitmq.constants';
-import { ClientProxy } from '@nestjs/microservices';
-import { SendMessageBroker } from '../service/SendMessageBroker';
+import { AuthGuard } from '@nestjs/passport';
+import { Observable } from 'rxjs';
+import { PaymentSSEService } from '../service/PaymentSSEService';
+import { UserDTO } from 'src/modules/payment/dtos/UserDTO';
 
 @Controller('webhook')
 export class WebhookController {
   constructor(
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
     private readonly service: ProcessWebhookService,
-    private readonly rabbit: SendMessageBroker,
+    private readonly paymentSse: PaymentSSEService,
   ) {}
 
   @Post('/confirm')
@@ -47,8 +50,14 @@ export class WebhookController {
     return { received: true };
   }
 
-  @Post('/test')
-  async testRabbit() {
-    await this.rabbit.test();
+  @Sse('/sse/:reservationId')
+  @UseGuards(AuthGuard('jwt'))
+  observePayments(@Req() req: Request): Observable<MessageEvent> {
+    const user = req.user as UserDTO;
+    const reservationId = req.params.reservationId;
+    return this.paymentSse.getPaymentsStreamForUser(
+      Number(reservationId),
+      user.id,
+    );
   }
 }

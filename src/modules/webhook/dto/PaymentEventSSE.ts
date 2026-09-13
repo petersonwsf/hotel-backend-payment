@@ -1,8 +1,7 @@
-import { PaymentDetails } from 'src/modules/payment/dtos/PaymentDetails';
-import { UserDTO } from 'src/modules/payment/dtos/UserDTO';
+import { Payment } from '@prisma/client';
 
 export interface PaymentEventSSE {
-  user: UserDTO;
+  userId: number;
   reservationId: number;
-  payment: PaymentDetails;
+  payment: Payment;
 }

@@ -3,9 +3,10 @@ import { Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { WebhookRepository } from '../repository/WebhookRepository';
 import { SendMessageBroker } from './SendMessageBroker';
-import { PaymentEventType } from '../dto/PaymentMessageBroker';
+import { eventTypeToStatus, PaymentEventType } from '../dto/PaymentMessageBroker';
 import { PaymentRepository } from 'src/modules/payment/repository/PaymentRepository';
 import { toPaymentEventData } from 'utils/toPaymentEventData';
+import { PaymentSSEService } from './PaymentSSEService';
 
 @Injectable()
 export class ProcessWebhookService {
@@ -13,6 +14,7 @@ export class ProcessWebhookService {
     private readonly paymentRepository: PaymentRepository,
     private readonly repository: WebhookRepository,
     private readonly sendMessageBroker: SendMessageBroker,
+    private readonly paymentSseService: PaymentSSEService,
   ) {}
 
   private readonly logger = new Logger(ProcessWebhookService.name);
@@ -117,13 +119,23 @@ export class ProcessWebhookService {
       return;
     }
 
+    const paymentUpdated = await this.paymentRepository.update(payment.id, {
+      status: eventTypeToStatus[eventType],
+    });
+
     const eventId = `${stripeEventId}:${eventType}`;
 
     await this.sendMessageBroker.send(
       eventId,
       eventType,
-      toPaymentEventData(payment),
+      toPaymentEventData(paymentUpdated),
       correlationId ?? undefined,
     );
+
+    this.paymentSseService.notifyPaymentEvents({
+      userId: paymentUpdated.userId,
+      reservationId: paymentUpdated.reservationId,
+      payment: paymentUpdated,
+    });
   }
 }

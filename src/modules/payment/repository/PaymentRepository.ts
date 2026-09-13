@@ -1,6 +1,6 @@
 import { IPaymentRepository } from './IPaymentRepository';
 import { prisma } from '../../../lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Payment, Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { UpdatePaymentDTO } from '../dtos/UpdatePaymentDTO';
 
@@ -41,13 +41,14 @@ export class PaymentRepository implements IPaymentRepository {
     return payment;
   }
 
-  async update(id: number, data: UpdatePaymentDTO) {
-    await prisma.payment.update({
+  async update(id: number, data: UpdatePaymentDTO): Promise<Payment> {
+    const payment = await prisma.payment.update({
       where: { id },
       data: {
         amountCaptured: data.amountCaptured ? data.amountCaptured : undefined,
         status: data.status ? data.status : undefined,
       },
     });
+    return payment;
   }
 }
