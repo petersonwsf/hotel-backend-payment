@@ -1,32 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { WebhookRepository } from '../repository/WebhookRepository';
-import { PaymentAuthorizedService } from './PaymentAuthorizedService';
-import { PaymentSucceededService } from './PaymentSucceededService';
-import { PaymentRefundedService } from './PaymentRefundedService';
-import { PaymentCanceledService } from './PaymentCanceledService';
+import { SendMessageBroker } from './SendMessageBroker';
+import { PaymentEventType } from '../dto/PaymentMessageBroker';
+import { PaymentRepository } from 'src/modules/payment/repository/PaymentRepository';
+import { toPaymentEventData } from 'utils/toPaymentEventData';
 
 @Injectable()
 export class ProcessWebhookService {
   constructor(
+    private readonly paymentRepository: PaymentRepository,
     private readonly repository: WebhookRepository,
-    private readonly paymentAuthorizedService: PaymentAuthorizedService,
-    private readonly paymentSucceededService: PaymentSucceededService,
-    private readonly paymentRefundedService: PaymentRefundedService,
-    private readonly paymentCanceledService: PaymentCanceledService,
+    private readonly sendMessageBroker: SendMessageBroker,
   ) {}
+
+  private readonly logger = new Logger(ProcessWebhookService.name);
 
   async execute(data: Stripe.Event) {
     const dataEvent = data;
 
     const dataObject = dataEvent.data.object as any;
-
-    const existingEvent = await this.repository.findByStripeEventId(
-      dataEvent.id,
-    );
-
-    if (existingEvent && existingEvent.status == 'PROCESSED') return;
 
     const reservationId = dataObject.metadata?.reservationId
       ? parseInt(dataObject.metadata.reservationId as string)
@@ -48,28 +42,88 @@ export class ProcessWebhookService {
       status: 'RECEIVED',
     };
 
-    const webhook = await this.repository.create(webhookData);
+    const existingEvent = await this.repository.findByStripeEventId(
+      dataEvent.id,
+    );
+
+    if (existingEvent && existingEvent.status === 'PROCESSED') return;
+
+    const webhook = existingEvent
+      ? await this.repository.resetForRetry(existingEvent.id, dataEvent as any)
+      : await this.repository.create(webhookData);
 
     try {
       switch (dataEvent.type) {
         case 'payment_intent.amount_capturable_updated':
-          this.paymentAuthorizedService.execute(webhook);
+          await this.publishPaymentEvent(
+            PaymentEventType.PAYMENT_AUTHORIZED,
+            webhook.paymentIntentId,
+            dataEvent.id,
+            webhook.idempotencyId,
+          );
           break;
         case 'payment_intent.succeeded':
-          this.paymentSucceededService.execute(webhook);
+          await this.publishPaymentEvent(
+            PaymentEventType.PAYMENT_CAPTURED,
+            webhook.paymentIntentId,
+            dataEvent.id,
+            webhook.idempotencyId,
+          );
           break;
         case 'charge.refunded':
-          this.paymentRefundedService.execute(webhook);
+          await this.publishPaymentEvent(
+            PaymentEventType.PAYMENT_REFUNDED,
+            webhook.paymentIntentId,
+            dataEvent.id,
+            webhook.idempotencyId,
+          );
           break;
         case 'payment_intent.canceled':
-          this.paymentCanceledService.execute(webhook);
+          await this.publishPaymentEvent(
+            PaymentEventType.PAYMENT_CANCELED,
+            webhook.paymentIntentId,
+            dataEvent.id,
+            webhook.idempotencyId,
+          );
           break;
         default:
           await this.repository.processWebhook(webhook.id, 'IGNORED');
+          return;
       }
+      await this.repository.processWebhook(webhook.id, 'PROCESSED');
     } catch (error: any) {
       await this.repository.processWebhook(webhook.id, 'FAILED', error.message);
       throw error;
     }
+  }
+
+  private async publishPaymentEvent(
+    eventType: PaymentEventType,
+    paymentIntentId: string | null,
+    stripeEventId: string,
+    correlationId?: string | null,
+  ) {
+    if (!paymentIntentId) return;
+
+    const payment =
+      await this.paymentRepository.findPaymentByStripePaymentIntentId(
+        paymentIntentId,
+      );
+
+    if (!payment) {
+      this.logger.warn(
+        `Payment não encontrado para paymentIntentId=${paymentIntentId}`,
+      );
+      return;
+    }
+
+    const eventId = `${stripeEventId}:${eventType}`;
+
+    await this.sendMessageBroker.send(
+      eventId,
+      eventType,
+      toPaymentEventData(payment),
+      correlationId ?? undefined,
+    );
   }
 }

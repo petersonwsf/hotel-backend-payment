@@ -6,9 +6,15 @@ import { PaymentModule } from './modules/payment/PaymentModule';
 import { WebhookModule } from './modules/webhook/WebhookModule';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ConsumerModule } from './modules/consumer/ConsumerModule';
 
 @Module({
-  imports: [PaymentModule, WebhookModule, ScheduleModule.forRoot()],
+  imports: [
+    PaymentModule,
+    WebhookModule,
+    ConsumerModule,
+    ScheduleModule.forRoot(),
+  ],
   controllers: [AppController],
   providers: [
     AppService,

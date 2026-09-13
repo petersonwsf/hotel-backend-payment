@@ -32,6 +32,15 @@ export class PaymentRepository implements IPaymentRepository {
     return payment;
   }
 
+  async findPaymentByStripePaymentIntentId(stripePaymentIntentId: string) {
+    const payment = await prisma.payment.findFirst({
+      where: {
+        stripePaymentIntentId,
+      },
+    });
+    return payment;
+  }
+
   async update(id: number, data: UpdatePaymentDTO) {
     await prisma.payment.update({
       where: { id },
