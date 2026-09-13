@@ -14,13 +14,14 @@ import { env } from 'process';
 import { ProcessWebhookService } from '../service/ProcessWebhookService';
 import { RABBITMQ_SERVICE } from 'src/common/rabbitmq/rabbitmq.constants';
 import { ClientProxy } from '@nestjs/microservices';
+import { SendMessageBroker } from '../service/SendMessageBroker';
 
 @Controller('webhook')
 export class WebhookController {
   constructor(
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
     private readonly service: ProcessWebhookService,
-    @Inject(RABBITMQ_SERVICE) private readonly rabbitmq: ClientProxy,
+    private readonly rabbit: SendMessageBroker,
   ) {}
 
   @Post('/confirm')
@@ -44,5 +45,10 @@ export class WebhookController {
     await this.service.execute(event);
 
     return { received: true };
+  }
+
+  @Post('/test')
+  async testRabbit() {
+    await this.rabbit.test();
   }
 }

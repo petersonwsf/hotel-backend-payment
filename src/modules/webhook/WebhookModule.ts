@@ -3,42 +3,33 @@ import { WebhookController } from './controller/WebhookController';
 import { ProcessWebhookService } from './service/ProcessWebhookService';
 import { WebhookRepository } from './repository/WebhookRepository';
 import { PaymentModule } from '../payment/PaymentModule';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { RABBITMQ_SERVICE } from '../../common/rabbitmq/rabbitmq.constants';
 import { env } from 'process';
-import { PaymentSucceededService } from './service/PaymentSucceededService';
-import { PaymentCanceledService } from './service/PaymentCanceledService';
-import { PaymentRefundedService } from './service/PaymentRefundedService';
-import { PaymentAuthorizedService } from './service/PaymentAuthorizedService';
 import { ProccessWebhookSchedule } from './service/ProccessWebhookSchedule';
+import { SendMessageBroker } from './service/SendMessageBroker';
+import { PaymentRepository } from '../payment/repository/PaymentRepository';
+import { STRIPE_CLIENT } from 'src/common/stripe/stripe.constants';
+import Stripe from 'stripe';
+import { RabbitMQConnectionProvider } from 'src/common/rabbitmq/rabbitmq.provider';
+import { RabbitMQChannelProvider } from 'src/common/rabbitmq/rabbitmq-channel.provider';
 
 @Module({
   controllers: [WebhookController],
   providers: [
     ProcessWebhookService,
+    PaymentRepository,
     WebhookRepository,
-    PaymentAuthorizedService,
-    PaymentCanceledService,
-    PaymentRefundedService,
-    PaymentSucceededService,
+    SendMessageBroker,
     ProccessWebhookSchedule,
+    RabbitMQConnectionProvider,
+    RabbitMQChannelProvider,
+    {
+      provide: STRIPE_CLIENT,
+      useFactory: () =>
+        new Stripe(env.STRIPE_SECRET_KEY ?? '', {
+          apiVersion: '2025-12-15.clover',
+        }),
+    },
   ],
-  imports: [
-    PaymentModule,
-    ClientsModule.register([
-      {
-        name: RABBITMQ_SERVICE,
-        transport: Transport.RMQ,
-        options: {
-          urls: [env.RABBITMQ_URL ?? ''],
-          exchangeType: 'topic',
-          exchange: 'payment_exchange',
-          queueOptions: {
-            durable: true,
-          },
-        },
-      },
-    ]),
-  ],
+  imports: [PaymentModule],
 })
 export class WebhookModule {}
