@@ -29,6 +29,7 @@ import { PaymentService } from '../service/PaymentService';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { Logger } from '@nestjs/common';
+import { UserDTO } from '../dtos/UserDTO';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('payment')
@@ -90,7 +91,7 @@ export class PaymentController {
   @HttpCode(200)
   async refundPayment(@Param() params: { id: string }, @Req() req: Request) {
     try {
-      const user = req.user as { id: number; username: string; role: string };
+      const user = req.user as UserDTO;
       const refund = await this.service.refund({ id: params.id, user });
       return refund;
     } catch (error) {
@@ -112,7 +113,7 @@ export class PaymentController {
     @Headers('authorization') token: string,
   ) {
     try {
-      const user = req.user as { id: number; username: string; role: string };
+      const user = req.user as UserDTO;
       const capture = await this.service.capture({ ...data, user }, token);
       return { capture };
     } catch (error) {
