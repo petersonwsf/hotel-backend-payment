@@ -36,7 +36,6 @@ async function setupRabbitTopology() {
 }
 
 async function bootstrap() {
-  // 1. Declara exchange/fila/bind antes de qualquer coisa
   await setupRabbitTopology();
 
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -47,8 +46,6 @@ async function bootstrap() {
       rawBody: true,
     },
   );
-
-  // 2. Conecta o microservice RMQ (consumidor)
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
@@ -61,10 +58,21 @@ async function bootstrap() {
     },
   });
 
-  // 3. Inicia o consumo das filas
+  app.enableCors({
+    origin: [env.HOTEL_FRONT_URL ?? ''],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Cache-Control',
+      'X-Requested-With',
+    ],
+    credentials: true,
+  });
+
   await app.startAllMicroservices();
 
-  // 4. Sobe o servidor HTTP normalmente
   await app.listen(process.env.PORT ?? 3333, '0.0.0.0');
 }
 

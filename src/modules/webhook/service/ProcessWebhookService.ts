@@ -135,10 +135,14 @@ export class ProcessWebhookService {
       correlationId ?? undefined,
     );
 
+    this.logger.log(`Evento ${eventId} enviado para o broker`);
+
     this.paymentSseService.notifyPaymentEvents({
       userId: paymentUpdated.userId,
       reservationId: paymentUpdated.reservationId,
       payment: paymentUpdated,
     });
+
+    this.logger.log(`Evento de atualização enviado para o subject`);
   }
 }

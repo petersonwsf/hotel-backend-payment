@@ -22,11 +22,11 @@ export class PaymentSSEService {
       map(
         (event) =>
           ({
-            data: JSON.stringify({
+            data: {
               userId: event.userId,
               reservationId: event.reservationId,
               payment: event.payment,
-            }),
+            },
           }) as MessageEvent,
       ),
     );
