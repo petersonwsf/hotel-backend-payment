@@ -36,6 +36,8 @@ model Payment {
   updatedAt             DateTime @updatedAt
   boletoUrl             String?
   codeBar               String?
+  clientEmail           String @default("")
+  clientName            String @default("")
 }
 
 enum WebhookProcessStatus {

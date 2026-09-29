@@ -47,6 +47,8 @@ export class FindPaymentByIdService {
       codeBar: payment.codeBar ?? undefined,
       boletoUrl: payment.boletoUrl ?? undefined,
       stripePaymentIntentId: payment.stripePaymentIntentId,
+      clientEmail: payment.clientEmail,
+      clientName: payment.clientName,
       clientSecret: stripePaymentIntent.client_secret,
     };
 

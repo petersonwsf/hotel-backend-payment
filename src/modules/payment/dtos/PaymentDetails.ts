@@ -12,6 +12,8 @@ export interface PaymentDetails {
   updatedAt: Date;
   currency: string;
   status: string;
+  clientEmail: string;
+  clientName: string;
   captureMethod: CaptureMethod;
   codeBar?: string | null;
   boletoUrl?: string | null;
