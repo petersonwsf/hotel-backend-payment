@@ -69,6 +69,8 @@ export class CreatePaymentService {
     );
 
     const paymentData: Prisma.PaymentCreateInput = {
+      clientEmail: client.email,
+      clientName: client.name,
       reservationId: dataValid.reservationId,
       stripePaymentIntentId: paymentIntent.paymentIntent.id,
       userId: dataValid.userId,

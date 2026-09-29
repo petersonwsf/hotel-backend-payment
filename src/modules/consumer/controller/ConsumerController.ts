@@ -44,6 +44,16 @@ export class ConsumerController {
       channel.ack(originalMsg);
     } catch (error) {
       if (
+        error?.raw?.code === 'payment_intent_incompatible_state' ||
+        error?.message?.includes('Boleto')
+      ) {
+        this.logger.warn(
+          `Reembolso Stripe ignorado para boleto pendente da reserva ${data?.data?.id}. O boleto expirará automaticamente.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+      if (
         error instanceof PaymentNotFound ||
         error instanceof PaymentNotBelongUser ||
         error instanceof PaymentCannotBeRefunded ||

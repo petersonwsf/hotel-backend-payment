@@ -16,6 +16,8 @@ export interface PaymentDataBase {
   paymentId: number;
   reservationId: number;
   userId: number;
+  recipientEmail: string;
+  recipientName: string;
   stripePaymentIntentId: string;
   amountAuthorized: number;
   amountCaptured: number;

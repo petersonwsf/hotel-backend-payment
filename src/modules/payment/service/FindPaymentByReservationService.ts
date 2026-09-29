@@ -44,6 +44,8 @@ export class FindPaymentByReservationService {
       codeBar: lastPayment.codeBar ?? undefined,
       boletoUrl: lastPayment.boletoUrl ?? undefined,
       stripePaymentIntentId: lastPayment.stripePaymentIntentId,
+      clientEmail: lastPayment.clientEmail,
+      clientName: lastPayment.clientName,
       clientSecret: stripePaymentIntent.client_secret,
     };
 

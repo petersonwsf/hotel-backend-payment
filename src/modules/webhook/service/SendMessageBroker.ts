@@ -23,7 +23,7 @@ export class SendMessageBroker {
     data: PaymentDataBase,
     correlationId?: string,
   ) {
-    const payload: PaymentEventEnvelope = {
+    const envelope: PaymentEventEnvelope = {
       eventId,
       eventType: binding,
       eventVersion: '1.0',
@@ -33,24 +33,19 @@ export class SendMessageBroker {
       data,
     };
 
+    const payloadWithPattern = {
+      pattern: binding,
+      data: envelope,
+    };
+
     await this.channel.publish(
       env.EXCHANGE_NAME ?? 'payments.topic',
       binding,
-      payload,
+      payloadWithPattern,
     );
 
-    this.logger.log(`Mensagem publicada com routing key "${binding}"`);
-  }
-
-  async test() {
-    await this.channel.publish(
-      env.EXCHANGE_NAME ?? 'payments.topic',
-      'payment.captured',
-      {
-        message: 'SIIIIIIIIII',
-        eventType: 'payment.captured',
-      },
+    this.logger.log(
+      `Mensagem publicada com routing key "\({binding}" e pattern "\){binding}"`,
     );
-    this.logger.log('Enviado com sucesso');
   }
 }
