@@ -85,7 +85,7 @@ export class ProcessWebhookService {
           break;
         case 'payment_intent.canceled':
           await this.publishPaymentEvent(
-            PaymentEventType.PAYMENT_CANCELED,
+            PaymentEventType.PAYMENT_REFUNDED,
             webhook.paymentIntentId,
             dataEvent.id,
             webhook.idempotencyId,
