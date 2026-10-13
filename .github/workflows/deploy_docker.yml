@@ -1,4 +1,4 @@
-name: Deploy Docker HUB
+name: Deploy API Payments
 
 on:
   push:
@@ -9,16 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Docker Setup Buildx
       uses: docker/setup-buildx-action@v3
-    
+
     - name: Docker login
       uses: docker/login-action@v3.6.0
       with:
         username: ${{ secrets.USERNAME_DOCKER_HUB }}
         password: ${{ secrets.PASSWORD_DOCKER_HUB }}
-    
+
     - name: Docker Build and Push Image
       uses: docker/build-push-action@v6.18.0
       with:
@@ -28,3 +28,21 @@ jobs:
         tags: |
           ${{ secrets.USERNAME_DOCKER_HUB }}/api_payment:v1.${{ github.run_number }}
           ${{ secrets.USERNAME_DOCKER_HUB }}/api_payment:latest
+
+  deploy_vps:
+    runs-on: ubuntu-latest
+    needs: deploy_docker_hub
+    steps:
+    - name: Atualizar container na VPS
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT }}
+        script_stop: true
+        script: |
+          cd ${{ secrets.VPS_PROJECT_PATH }}
+          docker compose pull api_payment
+          docker compose up -d api_payment
+          docker image prune -f
