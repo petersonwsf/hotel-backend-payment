@@ -25,6 +25,8 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
+        build-args: |
+          DATABASE_URL=postgresql://user:pass@localhost:5432/db
         tags: |
           ${{ secrets.USERNAME_DOCKER_HUB }}/api_payment:v1.${{ github.run_number }}
           ${{ secrets.USERNAME_DOCKER_HUB }}/api_payment:latest
